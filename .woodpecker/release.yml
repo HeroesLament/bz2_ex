@@ -1,5 +1,6 @@
 when:
-  event: tag
+  - event: tag
+  - event: manual
 
 steps:
   build-x86_64-unknown-linux-gnu:

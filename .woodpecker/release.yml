@@ -1,0 +1,78 @@
+when:
+  event: tag
+
+steps:
+  build-x86_64-unknown-linux-gnu:
+    image: rust:latest
+    commands:
+      - cd native/bz2_ex
+      - cargo build --release
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"
+
+  build-aarch64-unknown-linux-gnu:
+    image: ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
+    commands:
+      - rustup target add aarch64-unknown-linux-gnu
+      - cd native/bz2_ex
+      - cargo build --release --target aarch64-unknown-linux-gnu
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"
+      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+  build-x86_64-unknown-linux-musl:
+    image: ghcr.io/cross-rs/x86_64-unknown-linux-musl:main
+    commands:
+      - rustup target add x86_64-unknown-linux-musl
+      - cd native/bz2_ex
+      - cargo build --release --target x86_64-unknown-linux-musl
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"
+
+  build-aarch64-unknown-linux-musl:
+    image: ghcr.io/cross-rs/aarch64-unknown-linux-musl:main
+    commands:
+      - rustup target add aarch64-unknown-linux-musl
+      - cd native/bz2_ex
+      - cargo build --release --target aarch64-unknown-linux-musl
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"
+      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
+
+  build-x86_64-apple-darwin:
+    image: crazymax/osxcross:latest
+    commands:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - export PATH="$HOME/.cargo/bin:$PATH"
+      - rustup target add x86_64-apple-darwin
+      - cd native/bz2_ex
+      - cargo build --release --target x86_64-apple-darwin
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"
+      CC_x86_64_apple_darwin: o64-clang
+      CXX_x86_64_apple_darwin: o64-clang++
+      CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER: o64-clang
+
+  build-aarch64-apple-darwin:
+    image: crazymax/osxcross:latest
+    commands:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - export PATH="$HOME/.cargo/bin:$PATH"
+      - rustup target add aarch64-apple-darwin
+      - cd native/bz2_ex
+      - cargo build --release --target aarch64-apple-darwin
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"
+      CC_aarch64_apple_darwin: oa64-clang
+      CXX_aarch64_apple_darwin: oa64-clang++
+      CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER: oa64-clang
+
+  build-x86_64-pc-windows-gnu:
+    image: rust:latest
+    commands:
+      - apt-get update && apt-get install -y mingw-w64
+      - rustup target add x86_64-pc-windows-gnu
+      - cd native/bz2_ex
+      - cargo build --release --target x86_64-pc-windows-gnu
+    environment:
+      RUSTLER_NIF_VERSION: "2.16"

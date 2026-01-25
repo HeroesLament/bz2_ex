@@ -5,6 +5,7 @@ when:
 steps:
   build-x86_64-unknown-linux-gnu:
     image: rust:latest
+    depends_on: []
     commands:
       - cd native/bz2_ex
       - cargo build --release
@@ -13,6 +14,7 @@ steps:
 
   build-aarch64-unknown-linux-gnu:
     image: ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
+    depends_on: []
     commands:
       - rustup target add aarch64-unknown-linux-gnu
       - cd native/bz2_ex
@@ -23,6 +25,7 @@ steps:
 
   build-x86_64-unknown-linux-musl:
     image: ghcr.io/cross-rs/x86_64-unknown-linux-musl:main
+    depends_on: []
     commands:
       - rustup target add x86_64-unknown-linux-musl
       - cd native/bz2_ex
@@ -32,6 +35,7 @@ steps:
 
   build-aarch64-unknown-linux-musl:
     image: ghcr.io/cross-rs/aarch64-unknown-linux-musl:main
+    depends_on: []
     commands:
       - rustup target add aarch64-unknown-linux-musl
       - cd native/bz2_ex
@@ -42,6 +46,7 @@ steps:
 
   build-x86_64-apple-darwin:
     image: crazymax/osxcross:latest
+    depends_on: []
     commands:
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - export PATH="$HOME/.cargo/bin:$PATH"
@@ -56,6 +61,7 @@ steps:
 
   build-aarch64-apple-darwin:
     image: crazymax/osxcross:latest
+    depends_on: []
     commands:
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - export PATH="$HOME/.cargo/bin:$PATH"
@@ -70,6 +76,7 @@ steps:
 
   build-x86_64-pc-windows-gnu:
     image: rust:latest
+    depends_on: []
     commands:
       - apt-get update && apt-get install -y mingw-w64
       - rustup target add x86_64-pc-windows-gnu

@@ -1,0 +1,20 @@
+[package]
+name = "bz2_ex"
+version = "0.1.0"
+edition = "2021"
+authors = ["HeroesLament <nunya@biz.net>"]
+description = "Rustler NIF bindings for bzip2 compression"
+license = "MIT"
+publish = false
+
+[lib]
+name = "bz2_ex"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.37"
+libbz2-rs-sys = "0.2"
+
+[profile.release]
+lto = true
+opt-level = 3

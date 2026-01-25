@@ -1,0 +1,35 @@
+# Elixir
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+bz2_ex-*.tar
+/tmp/
+
+# Elixir LS
+/.elixir_ls/
+/.elixir-tools/
+
+# Dialyzer
+/priv/plts/
+
+# Rust
+/native/*/target/
+**/*.rs.bk
+Cargo.lock
+
+# Compiled NIF
+/priv/native/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+/.idea/
+/*.iml
+/.vscode/
+!/.vscode/settings.json

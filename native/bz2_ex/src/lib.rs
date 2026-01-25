@@ -55,9 +55,9 @@ fn compress<'a>(
 
     let result = unsafe {
         libbz2_rs_sys::BZ2_bzBuffToBuffCompress(
-            output_vec.as_mut_ptr() as *mut i8,
+            output_vec.as_mut_ptr(),
             &mut dest_len,
-            input_slice.as_ptr() as *mut i8,
+            input_slice.as_ptr() as *mut u8,
             input_slice.len() as u32,
             block_size,
             0,
@@ -91,9 +91,9 @@ fn decompress<'a>(
 
         let result = unsafe {
             libbz2_rs_sys::BZ2_bzBuffToBuffDecompress(
-                output_vec.as_mut_ptr() as *mut i8,
+                output_vec.as_mut_ptr(),
                 &mut dest_len,
-                input_slice.as_ptr() as *mut i8,
+                input_slice.as_ptr() as *mut u8,
                 input_slice.len() as u32,
                 if small { 1 } else { 0 },
                 0,
@@ -278,9 +278,9 @@ fn compress_stream_deflate<'a>(
     let input_slice = input.as_slice();
     let mut output_vec = vec![0u8; input_slice.len() + 600];
 
-    inner.stream.next_in = input_slice.as_ptr() as *mut i8;
+    inner.stream.next_in = input_slice.as_ptr();
     inner.stream.avail_in = input_slice.len() as u32;
-    inner.stream.next_out = output_vec.as_mut_ptr() as *mut i8;
+    inner.stream.next_out = output_vec.as_mut_ptr();
     inner.stream.avail_out = output_vec.len() as u32;
 
     let result = unsafe { libbz2_rs_sys::BZ2_bzCompress(&mut *inner.stream, libbz2_rs_sys::BZ_RUN) };
@@ -312,9 +312,9 @@ fn compress_stream_finish<'a>(
     let mut buffer = vec![0u8; 4096];
 
     loop {
-        inner.stream.next_in = std::ptr::null_mut();
+        inner.stream.next_in = std::ptr::null();
         inner.stream.avail_in = 0;
-        inner.stream.next_out = buffer.as_mut_ptr() as *mut i8;
+        inner.stream.next_out = buffer.as_mut_ptr();
         inner.stream.avail_out = buffer.len() as u32;
 
         let result =
@@ -366,11 +366,11 @@ fn decompress_stream_inflate<'a>(
     let mut output_chunks: Vec<u8> = Vec::new();
     let mut buffer = vec![0u8; input_slice.len() * 4 + 4096];
 
-    inner.stream.next_in = input_slice.as_ptr() as *mut i8;
+    inner.stream.next_in = input_slice.as_ptr();
     inner.stream.avail_in = input_slice.len() as u32;
 
     loop {
-        inner.stream.next_out = buffer.as_mut_ptr() as *mut i8;
+        inner.stream.next_out = buffer.as_mut_ptr();
         inner.stream.avail_out = buffer.len() as u32;
 
         let result = unsafe { libbz2_rs_sys::BZ2_bzDecompress(&mut *inner.stream) };

@@ -2,85 +2,38 @@ when:
   - event: tag
   - event: manual
 
+matrix:
+  include:
+    - TARGET: x86_64-unknown-linux-gnu
+      IMAGE: rust:latest
+      LINKER_ENV: ""
+    - TARGET: aarch64-unknown-linux-gnu
+      IMAGE: ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
+      LINKER_ENV: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc"
+    - TARGET: x86_64-unknown-linux-musl
+      IMAGE: ghcr.io/cross-rs/x86_64-unknown-linux-musl:main
+      LINKER_ENV: ""
+    - TARGET: aarch64-unknown-linux-musl
+      IMAGE: ghcr.io/cross-rs/aarch64-unknown-linux-musl:main
+      LINKER_ENV: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc"
+    - TARGET: x86_64-apple-darwin
+      IMAGE: crazymax/osxcross:latest
+      LINKER_ENV: "CC_x86_64_apple_darwin=o64-clang CXX_x86_64_apple_darwin=o64-clang++ CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=o64-clang"
+    - TARGET: aarch64-apple-darwin
+      IMAGE: crazymax/osxcross:latest
+      LINKER_ENV: "CC_aarch64_apple_darwin=oa64-clang CXX_aarch64_apple_darwin=oa64-clang++ CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=oa64-clang"
+
 steps:
-  build-x86_64-unknown-linux-gnu:
-    image: rust:latest
-    depends_on: []
+  - name: build-${TARGET}
+    image: ${IMAGE}
     commands:
+      - |
+        if command -v rustup >/dev/null 2>&1; then
+          echo "Rust already installed"
+        else
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          export PATH="$HOME/.cargo/bin:$PATH"
+        fi
+      - rustup target add ${TARGET} || true
       - cd native/bz2_ex
-      - cargo build --release
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
-
-  build-aarch64-unknown-linux-gnu:
-    image: ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
-    depends_on: []
-    commands:
-      - rustup target add aarch64-unknown-linux-gnu
-      - cd native/bz2_ex
-      - cargo build --release --target aarch64-unknown-linux-gnu
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
-      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-
-  build-x86_64-unknown-linux-musl:
-    image: ghcr.io/cross-rs/x86_64-unknown-linux-musl:main
-    depends_on: []
-    commands:
-      - rustup target add x86_64-unknown-linux-musl
-      - cd native/bz2_ex
-      - cargo build --release --target x86_64-unknown-linux-musl
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
-
-  build-aarch64-unknown-linux-musl:
-    image: ghcr.io/cross-rs/aarch64-unknown-linux-musl:main
-    depends_on: []
-    commands:
-      - rustup target add aarch64-unknown-linux-musl
-      - cd native/bz2_ex
-      - cargo build --release --target aarch64-unknown-linux-musl
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
-      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
-
-  build-x86_64-apple-darwin:
-    image: crazymax/osxcross:latest
-    depends_on: []
-    commands:
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - export PATH="$HOME/.cargo/bin:$PATH"
-      - rustup target add x86_64-apple-darwin
-      - cd native/bz2_ex
-      - cargo build --release --target x86_64-apple-darwin
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
-      CC_x86_64_apple_darwin: o64-clang
-      CXX_x86_64_apple_darwin: o64-clang++
-      CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER: o64-clang
-
-  build-aarch64-apple-darwin:
-    image: crazymax/osxcross:latest
-    depends_on: []
-    commands:
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - export PATH="$HOME/.cargo/bin:$PATH"
-      - rustup target add aarch64-apple-darwin
-      - cd native/bz2_ex
-      - cargo build --release --target aarch64-apple-darwin
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
-      CC_aarch64_apple_darwin: oa64-clang
-      CXX_aarch64_apple_darwin: oa64-clang++
-      CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER: oa64-clang
-
-  build-x86_64-pc-windows-gnu:
-    image: rust:latest
-    depends_on: []
-    commands:
-      - apt-get update && apt-get install -y mingw-w64
-      - rustup target add x86_64-pc-windows-gnu
-      - cd native/bz2_ex
-      - cargo build --release --target x86_64-pc-windows-gnu
-    environment:
-      RUSTLER_NIF_VERSION: "2.16"
+      - ${LINKER_ENV} RUSTLER_NIF_VERSION=2.16 cargo build --release --target ${TARGET}

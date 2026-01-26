@@ -42,7 +42,7 @@ steps:
     commands:
       - apt-get update && apt-get install -y curl jq
       - cd artifacts
-      - VERSION=${CI_COMMIT_TAG#v}
+      - VERSION=${VERSION:-${CI_COMMIT_TAG#v}}
       - |
         for target in x86_64-apple-darwin aarch64-apple-darwin; do
           TARBALL="libbz2_ex-nif-2.16-${target}-${VERSION}.tar.gz"
@@ -51,14 +51,14 @@ steps:
         done
       - |
         RELEASE=$(curl -s -H "Authorization: token $GITHUB_PAT_TOKEN" \
-          "https://api.github.com/repos/${CI_REPO}/releases/tags/${CI_COMMIT_TAG}")
+          "https://api.github.com/repos/${CI_REPO}/releases/tags/v${VERSION}")
         UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
         
         if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
           RELEASE=$(curl -s -X POST \
             -H "Authorization: token $GITHUB_PAT_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"name\":\"${CI_COMMIT_TAG}\",\"draft\":false,\"prerelease\":false}" \
+            -d "{\"tag_name\":\"v${VERSION}\",\"name\":\"v${VERSION}\",\"draft\":false,\"prerelease\":false}" \
             "https://api.github.com/repos/${CI_REPO}/releases")
           UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
         fi

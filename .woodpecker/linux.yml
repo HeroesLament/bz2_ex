@@ -1,0 +1,26 @@
+when:
+  - event: tag
+  - event: manual
+
+matrix:
+  include:
+    - TARGET: x86_64-unknown-linux-gnu
+      IMAGE: rust:latest
+      ENVVARS: ""
+    - TARGET: aarch64-unknown-linux-gnu
+      IMAGE: ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
+      ENVVARS: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc"
+    - TARGET: x86_64-unknown-linux-musl
+      IMAGE: ghcr.io/cross-rs/x86_64-unknown-linux-musl:main
+      ENVVARS: "RUSTFLAGS=-Ctarget-feature=-crt-static"
+    - TARGET: aarch64-unknown-linux-musl
+      IMAGE: ghcr.io/cross-rs/aarch64-unknown-linux-musl:main
+      ENVVARS: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc RUSTFLAGS=-Ctarget-feature=-crt-static"
+
+steps:
+  - name: build
+    image: ${IMAGE}
+    commands:
+      - rustup target add ${TARGET} || true
+      - cd native/bz2_ex
+      - ${ENVVARS} RUSTLER_NIF_VERSION=2.16 cargo build --release --target ${TARGET}

@@ -1,6 +1,6 @@
 when:
-  - event: tag
-  - event: manual
+  - event: deployment
+    evaluate: 'CI_PIPELINE_DEPLOY_TARGET == "release"'
 
 matrix:
   include:
@@ -32,7 +32,9 @@ steps:
 
   - name: package-and-upload
     image: alpine:latest
-    secrets: [github-pat-token]
+    environment:
+      GITHUB_PAT_TOKEN:
+        from_secret: github-pat-token
     commands:
       - apk add --no-cache curl jq
       - cd artifacts
@@ -62,5 +64,3 @@ steps:
             --data-binary @"$file" \
             "${UPLOAD_URL}?name=$file"
         done
-    when:
-      - event: tag

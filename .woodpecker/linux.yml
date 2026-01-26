@@ -39,27 +39,35 @@ steps:
       - apt-get update && apt-get install -y curl jq
       - cd artifacts
       - VERSION=${VERSION:-${CI_COMMIT_TAG#v}}
+      - echo "VERSION=$VERSION"
+      - echo "CI_REPO=$CI_REPO"
       - TARBALL="libbz2_ex-nif-2.16-${TARGET}-${VERSION}.tar.gz"
       - tar -czf "$TARBALL" libbz2_ex.so
       - sha256sum "$TARBALL" > "$TARBALL.sha256"
       - |
-        # Get or create release
-        RELEASE=$(curl -s -H "Authorization: token $${GITHUB_PAT_TOKEN}" \
+        echo "Fetching release..."
+        RELEASE=$(curl -s -H "Authorization: token $GITHUB_PAT_TOKEN" \
           "https://api.github.com/repos/${CI_REPO}/releases/tags/v${VERSION}")
+        echo "RELEASE response: $RELEASE"
         UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
+        echo "UPLOAD_URL: $UPLOAD_URL"
         
         if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
+          echo "Creating release..."
           RELEASE=$(curl -s -X POST \
-            -H "Authorization: token $${GITHUB_PAT_TOKEN}" \
+            -H "Authorization: token $GITHUB_PAT_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"tag_name\":\"v${VERSION}\",\"name\":\"v${VERSION}\",\"draft\":false,\"prerelease\":false}" \
             "https://api.github.com/repos/${CI_REPO}/releases")
+          echo "Create response: $RELEASE"
           UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
+          echo "UPLOAD_URL after create: $UPLOAD_URL"
         fi
         
         for file in *.tar.gz *.sha256; do
+          echo "Uploading $file..."
           curl -s -X POST \
-            -H "Authorization: token $${GITHUB_PAT_TOKEN}" \
+            -H "Authorization: token $GITHUB_PAT_TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$file" \
             "${UPLOAD_URL}?name=$file"

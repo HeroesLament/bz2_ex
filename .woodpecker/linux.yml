@@ -5,22 +5,25 @@ when:
 matrix:
   include:
     - TARGET: x86_64-unknown-linux-gnu
-      IMAGE: rust:latest
+      CROSS_PKG: ""
       ENVVARS: ""
     - TARGET: aarch64-unknown-linux-gnu
-      IMAGE: ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main
+      CROSS_PKG: "gcc-aarch64-linux-gnu"
       ENVVARS: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc"
     - TARGET: x86_64-unknown-linux-musl
-      IMAGE: ghcr.io/cross-rs/x86_64-unknown-linux-musl:main
+      CROSS_PKG: "musl-tools"
       ENVVARS: "RUSTFLAGS=-Ctarget-feature=-crt-static"
     - TARGET: aarch64-unknown-linux-musl
-      IMAGE: ghcr.io/cross-rs/aarch64-unknown-linux-musl:main
-      ENVVARS: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc RUSTFLAGS=-Ctarget-feature=-crt-static"
+      CROSS_PKG: "musl-tools gcc-aarch64-linux-gnu musl-dev"
+      ENVVARS: "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc RUSTFLAGS=-Ctarget-feature=-crt-static"
 
 steps:
   - name: build
-    image: ${IMAGE}
+    image: hexpm/elixir:1.18.3-erlang-27.3-debian-bookworm-20250224
     commands:
-      - rustup target add ${TARGET} || true
+      - apt-get update && apt-get install -y curl build-essential ${CROSS_PKG}
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - . "$HOME/.cargo/env"
+      - rustup target add ${TARGET}
       - cd native/bz2_ex
       - ${ENVVARS} RUSTLER_NIF_VERSION=2.16 cargo build --release --target ${TARGET}

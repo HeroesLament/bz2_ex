@@ -6,12 +6,15 @@ steps:
   - name: build
     image: silkeh/clang:latest
     commands:
-      - apt-get update && apt-get install -y curl xz-utils
+      - apt-get update && apt-get install -y curl xz-utils lld
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . "$HOME/.cargo/env"
       - mkdir -p /opt/sysroot
       - curl -L https://download.freebsd.org/ftp/releases/amd64/amd64/14.3-RELEASE/base.txz | tar -xJf - -C /opt/sysroot
       - rustup target add x86_64-unknown-freebsd
       - cd native/bz2_ex
-      - export CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=clang
-      - CFLAGS="--sysroot=/opt/sysroot --target=x86_64-unknown-freebsd14" RUSTLER_NIF_VERSION=2.16 cargo build --release --target x86_64-unknown-freebsd
+      - |
+        CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=clang \
+        RUSTFLAGS="-C link-arg=--sysroot=/opt/sysroot -C link-arg=-fuse-ld=lld -C link-arg=--target=x86_64-unknown-freebsd14" \
+        RUSTLER_NIF_VERSION=2.16 \
+        cargo build --release --target x86_64-unknown-freebsd

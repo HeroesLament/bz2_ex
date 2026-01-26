@@ -1,0 +1,27 @@
+when:
+  - event: tag
+  - event: manual
+
+matrix:
+  include:
+    - TARGET: x86_64-unknown-freebsd
+      SYSROOT_URL: https://download.freebsd.org/releases/amd64/14.2-RELEASE/base.txz
+      CLANG_TARGET: x86_64-unknown-freebsd14
+    - TARGET: aarch64-unknown-freebsd
+      SYSROOT_URL: https://download.freebsd.org/releases/arm64/14.2-RELEASE/base.txz
+      CLANG_TARGET: aarch64-unknown-freebsd14
+
+steps:
+  - name: build
+    image: rust:latest
+    commands:
+      - apt-get update && apt-get install -y clang lld curl xz-utils
+      - mkdir -p /opt/sysroot
+      - curl -L ${SYSROOT_URL} | tar -xJf - -C /opt/sysroot
+      - rustup target add ${TARGET}
+      - cd native/bz2_ex
+      - |
+        CARGO_TARGET_$(echo ${TARGET} | tr '[:lower:]-' '[:upper:]_')_LINKER=clang \
+        CFLAGS="--sysroot=/opt/sysroot --target=${CLANG_TARGET}" \
+        RUSTLER_NIF_VERSION=2.16 \
+        cargo build --release --target ${TARGET}

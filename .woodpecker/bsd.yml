@@ -2,15 +2,6 @@ when:
   - event: tag
   - event: manual
 
-matrix:
-  include:
-    - TARGET: x86_64-unknown-freebsd
-      SYSROOT_URL: https://download.freebsd.org/releases/amd64/amd64/14.3-RELEASE/base.txz
-      CLANG_TARGET: x86_64-unknown-freebsd14
-    - TARGET: aarch64-unknown-freebsd
-      SYSROOT_URL: https://download.freebsd.org/releases/arm64/aarch64/14.3-RELEASE/base.txz
-      CLANG_TARGET: aarch64-unknown-freebsd14
-
 steps:
   - name: build
     image: silkeh/clang:latest
@@ -19,11 +10,8 @@ steps:
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . "$HOME/.cargo/env"
       - mkdir -p /opt/sysroot
-      - curl -L ${SYSROOT_URL} | tar -xJf - -C /opt/sysroot
-      - rustup target add ${TARGET}
+      - curl -L https://download.freebsd.org/ftp/releases/amd64/amd64/14.3-RELEASE/base.txz | tar -xJf - -C /opt/sysroot
+      - rustup target add x86_64-unknown-freebsd
       - cd native/bz2_ex
-      - |
-        CARGO_TARGET_$(echo ${TARGET} | tr '[:lower:]-' '[:upper:]_')_LINKER=clang \
-        CFLAGS="--sysroot=/opt/sysroot --target=${CLANG_TARGET}" \
-        RUSTLER_NIF_VERSION=2.16 \
-        cargo build --release --target ${TARGET}
+      - export CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=clang
+      - CFLAGS="--sysroot=/opt/sysroot --target=x86_64-unknown-freebsd14" RUSTLER_NIF_VERSION=2.16 cargo build --release --target x86_64-unknown-freebsd

@@ -5,17 +5,19 @@ when:
 matrix:
   include:
     - TARGET: x86_64-unknown-freebsd
-      SYSROOT_URL: https://download.freebsd.org/releases/amd64/14.2-RELEASE/base.txz
+      SYSROOT_URL: https://download.freebsd.org/releases/amd64/amd64/14.3-RELEASE/base.txz
       CLANG_TARGET: x86_64-unknown-freebsd14
     - TARGET: aarch64-unknown-freebsd
-      SYSROOT_URL: https://download.freebsd.org/releases/arm64/14.2-RELEASE/base.txz
+      SYSROOT_URL: https://download.freebsd.org/releases/arm64/aarch64/14.3-RELEASE/base.txz
       CLANG_TARGET: aarch64-unknown-freebsd14
 
 steps:
   - name: build
-    image: rust:latest
+    image: silkeh/clang:latest
     commands:
-      - apt-get update && apt-get install -y clang lld curl xz-utils
+      - apt-get update && apt-get install -y curl xz-utils
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - . "$HOME/.cargo/env"
       - mkdir -p /opt/sysroot
       - curl -L ${SYSROOT_URL} | tar -xJf - -C /opt/sysroot
       - rustup target add ${TARGET}

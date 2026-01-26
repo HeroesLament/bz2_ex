@@ -35,12 +35,12 @@ steps:
       - docker build -f /tmp/Dockerfile.darwin -o artifacts .
 
   - name: package-and-upload
-    image: alpine:latest
+    image: debian:bookworm-slim
     environment:
       GITHUB_PAT_TOKEN:
         from_secret: github-pat-token
     commands:
-      - apk add --no-cache curl jq
+      - apt-get update && apt-get install -y curl jq
       - cd artifacts
       - VERSION=${CI_COMMIT_TAG#v}
       - |

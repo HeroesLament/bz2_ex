@@ -11,5 +11,5 @@ steps:
       - mix local.hex --force
       - mix local.rebar --force
       - mix deps.get
-      - mix compile
-      - mix test
+      - BZ2_EX_BUILD=true mix compile
+      - BZ2_EX_BUILD=true mix test

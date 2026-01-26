@@ -18,3 +18,39 @@ steps:
         RUSTFLAGS="-C link-arg=--sysroot=/opt/sysroot -C link-arg=-fuse-ld=lld -C link-arg=--target=x86_64-unknown-freebsd14" \
         RUSTLER_NIF_VERSION=2.16 \
         cargo build --release --target x86_64-unknown-freebsd
+      - mkdir -p ../../artifacts
+      - cp target/x86_64-unknown-freebsd/release/libbz2_ex.so ../../artifacts/
+
+  - name: package-and-upload
+    image: alpine:latest
+    secrets: [github-pat-token]
+    commands:
+      - apk add --no-cache curl jq
+      - cd artifacts
+      - VERSION=${CI_COMMIT_TAG#v}
+      - TARBALL="libbz2_ex-nif-2.16-x86_64-unknown-freebsd-${VERSION}.tar.gz"
+      - tar -czf "$TARBALL" libbz2_ex.so
+      - sha256sum "$TARBALL" > "$TARBALL.sha256"
+      - |
+        RELEASE=$(curl -s -H "Authorization: token $GITHUB_PAT_TOKEN" \
+          "https://api.github.com/repos/${CI_REPO}/releases/tags/${CI_COMMIT_TAG}")
+        UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
+        
+        if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
+          RELEASE=$(curl -s -X POST \
+            -H "Authorization: token $GITHUB_PAT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"name\":\"${CI_COMMIT_TAG}\",\"draft\":false,\"prerelease\":false}" \
+            "https://api.github.com/repos/${CI_REPO}/releases")
+          UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
+        fi
+        
+        for file in *.tar.gz *.sha256; do
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_PAT_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$file" \
+            "${UPLOAD_URL}?name=$file"
+        done
+    when:
+      - event: tag

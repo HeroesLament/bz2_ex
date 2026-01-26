@@ -12,7 +12,6 @@ steps:
         cat > /tmp/Dockerfile.darwin << 'EOF'
         FROM crazymax/osxcross:latest AS osxcross
         FROM rust:latest AS builder
-        RUN apt-get update && apt-get install -y clang lld
         COPY --from=osxcross /osxcross /osxcross
         ENV PATH="/osxcross/bin:$PATH"
         ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
@@ -33,4 +32,41 @@ steps:
         COPY --from=builder /build/native/bz2_ex/target/x86_64-apple-darwin/release/libbz2_ex.dylib /x86_64-apple-darwin/
         COPY --from=builder /build/native/bz2_ex/target/aarch64-apple-darwin/release/libbz2_ex.dylib /aarch64-apple-darwin/
         EOF
-      - docker build -f /tmp/Dockerfile.darwin -o artifacts/darwin .
+      - docker build -f /tmp/Dockerfile.darwin -o artifacts .
+
+  - name: package-and-upload
+    image: alpine:latest
+    secrets: [github-pat-token]
+    commands:
+      - apk add --no-cache curl jq
+      - cd artifacts
+      - VERSION=${CI_COMMIT_TAG#v}
+      - |
+        for target in x86_64-apple-darwin aarch64-apple-darwin; do
+          TARBALL="libbz2_ex-nif-2.16-${target}-${VERSION}.tar.gz"
+          tar -czf "$TARBALL" -C "$target" libbz2_ex.dylib
+          sha256sum "$TARBALL" > "$TARBALL.sha256"
+        done
+      - |
+        RELEASE=$(curl -s -H "Authorization: token $GITHUB_PAT_TOKEN" \
+          "https://api.github.com/repos/${CI_REPO}/releases/tags/${CI_COMMIT_TAG}")
+        UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
+        
+        if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
+          RELEASE=$(curl -s -X POST \
+            -H "Authorization: token $GITHUB_PAT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"name\":\"${CI_COMMIT_TAG}\",\"draft\":false,\"prerelease\":false}" \
+            "https://api.github.com/repos/${CI_REPO}/releases")
+          UPLOAD_URL=$(echo "$RELEASE" | jq -r '.upload_url' | sed 's/{.*//')
+        fi
+        
+        for file in *.tar.gz *.sha256; do
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_PAT_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$file" \
+            "${UPLOAD_URL}?name=$file"
+        done
+    when:
+      - event: tag

@@ -6,7 +6,7 @@ defmodule Bz2Ex.Native do
   use RustlerPrecompiled,
     otp_app: :bz2_ex,
     crate: "bz2_ex",
-    base_url: "https://github.com/YOURNAME/bz2-ex/releases/download/v#{version}",
+    base_url: "https://github.com/HeroesLament/bz2-ex/releases/download/v#{version}",
     force_build: System.get_env("BZ2_EX_BUILD") in ["1", "true"],
     targets: ~w(
       aarch64-apple-darwin

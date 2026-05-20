@@ -2,7 +2,7 @@ defmodule Bz2Ex.MixProject do
   use Mix.Project
 
   @version "0.1.1"
-  @source_url "https://github.com/HeroesLament/bz2-ex"
+  @source_url "https://github.com/HeroesLament/bz2_ex"
 
   def project do
     [
